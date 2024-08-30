@@ -1,9 +1,7 @@
 name: Deploy to AWS
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 env:
   PRODUCTS_DB_ARN: ${{ secrets.PRODUCTS_DB_ARN }}
@@ -21,7 +19,7 @@ jobs:
       - name: serverless deploy
         uses: serverless/github-action@v3.2
         with:
-          args: -c "serverless plugin install serverless-python-requirements --name deploy
+          args: -c "serverless plugin install --name serverless-python-requirements && serverless deploy"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -4,4 +4,4 @@
 
 # example usage: ./test.sh techmatched
 
-serverless invoke local -e LOCAL=true --function $1 
+serverless invoke local --function $1 --debug

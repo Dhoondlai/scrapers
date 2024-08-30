@@ -20,7 +20,7 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource:
-        - ${self:provider.environment.PRODUCTS_DB_ARN}
+        - ${self:provider.environment.PRODUCTS_DB_ARN, "arn:aws:dynamodb:us-east-1:123456789012:table/Products"}
 
 functions:
   techmatched:

@@ -3,19 +3,22 @@ import requests
 import re
 import boto3
 import os
+import sys
 
 vendor = "TechMatched"
 
-if os.environ.get("LOCAL"):
+if os.environ.get("IS_LOCAL"):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
 else:
     dynamodb = boto3.resource('dynamodb')
+sys.stdout.reconfigure(encoding='utf-8')
 
 
 def run(event, context):
     # categories mapped as per in the url
     # only setting up data with processors now.
     # Will slowly start adding others as data makes more sense.
+
     categories = {
         "Processor": "processors",
         # "Motherboard": "motherboards",
@@ -38,22 +41,29 @@ def run(event, context):
         # "SSD": ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd"],
         # "Hard Drive": "hard-drive"
     }
+
     # will store all the urls associated with their category.
+    ###################################################### Comment this section if you want to test with only one url######################################################
     urls_dict = {}
     for db_category, url_category in categories.items():
-        if db_category == "SSD":
-            for category in url_category:
-                urls = get_links(category)
-                try:
-                    urls_dict[category] = urls
-                except Exception as e:
-                    continue
-            continue
-        urls = get_links(url_category)
         try:
-            urls_dict[category] = urls
+            if db_category == "SSD":
+                for category in url_category:
+                    urls = get_links(category)
+                    urls_dict[category] = urls
+            else:
+                urls = get_links(url_category)
+                urls_dict[db_category] = urls
         except Exception as e:
-            continue
+            print(e)
+            exit(1)
+    print(urls_dict)
+    ###################################################### Comment this section if you want to test with only one url######################################################
+
+    ###################################### Uncomment this section if you want to test with only one url######################################################
+    # urls_dict = {'Processor': [
+    #     'https://techmatched.pk/product/buy-amd-ryzen-7-7950x-3d-desktop-processor/']}
+    ###################################### Uncomment this section if you want to test with only one url################################################
 
     scrape_data(urls_dict)
 
@@ -72,7 +82,6 @@ def get_links(category):
         no_of_pages = 1
     else:
         page_numbers = pages.find_all('li')
-        print(len(list(page_numbers)))
         # -1 is for the "next" button
         no_of_pages = len(list(page_numbers)) - 1
 
@@ -101,15 +110,16 @@ def scrape_data(url_dict):
             soup = BeautifulSoup(page.content, "html.parser")
             name = soup.find("h1", class_="product_title entry-title").text
             price = soup.find(
-                "p", class_="woocommerce-Price-amount amount").text
+                "p", class_="price").text
             # warranty field starts with "Warranty:"
             warranty = soup.find("p", text=re.compile(r'(?i)warranty')).text
-
             clean_data(name, vendor, price, warranty, category, url)
 
 
 def clean_data(name, vendor, price, warranty, category, url):
     # Remove all the useless data as we want everything to be consistent.
+
+    # names
     name = name.split("Buy", 1)[-1].strip()
 
     if category == "Processor":
@@ -117,3 +127,8 @@ def clean_data(name, vendor, price, warranty, category, url):
             name = name.split("Box")[0].strip()
         elif "Tray" in name:
             name = name.split("Tray")[0].strip()
+
+    # prices
+    price = price.split('\u20a8', 1)[-1].strip()
+    print(price)
+    print(name)

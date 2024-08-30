@@ -2,33 +2,41 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import boto3
+import os
 
 vendor = "TechMatched"
+
+if os.environ.get("LOCAL"):
+    dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+else:
+    dynamodb = boto3.resource('dynamodb')
 
 
 def run(event, context):
     # categories mapped as per in the url
+    # only setting up data with processors now.
+    # Will slowly start adding others as data makes more sense.
     categories = {
         "Processor": "processors",
-        "Motherboard": "motherboards",
-        "Thermal Paste": "thermal-paste",
-        "CPU Cooler": "cpu-coolers",
-        "RAM": "rams",
-        "Casing": "computer-case",
-        "Fan": "fans-kits",
-        "Power Supply": "buy-power-supply-in-pakistan",
-        "Graphics Card": "graphics-card-in-pakistan",
-        "Gaming Monitor": "gaming-monitors",
-        "Gaming Chair": "gaming-chairs",
-        "Mouse": "gaming-mouse",
-        "Keyboard": "gaming-keyboards",
-        "Mousepad": "xxl-mousepad",
-        "Headphone": "headphones",
-        "Controller": "pc-controllers",
-        "Cable": "pc-cables",
-        "Webcam": "webcam",
-        "SSD": ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd"],
-        "Hard Drive": "hard-drive"
+        # "Motherboard": "motherboards",
+        # "Thermal Paste": "thermal-paste",
+        # "CPU Cooler": "cpu-coolers",
+        # "RAM": "rams",
+        # "Casing": "computer-case",
+        # "Fan": "fans-kits",
+        # "Power Supply": "buy-power-supply-in-pakistan",
+        # "Graphics Card": "graphics-card-in-pakistan",
+        # "Gaming Monitor": "gaming-monitors",
+        # "Gaming Chair": "gaming-chairs",
+        # "Mouse": "gaming-mouse",
+        # "Keyboard": "gaming-keyboards",
+        # "Mousepad": "xxl-mousepad",
+        # "Headphone": "headphones",
+        # "Controller": "pc-controllers",
+        # "Cable": "pc-cables",
+        # "Webcam": "webcam",
+        # "SSD": ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd"],
+        # "Hard Drive": "hard-drive"
     }
     # will store all the urls associated with their category.
     urls_dict = {}
@@ -96,3 +104,16 @@ def scrape_data(url_dict):
                 "p", class_="woocommerce-Price-amount amount").text
             # warranty field starts with "Warranty:"
             warranty = soup.find("p", text=re.compile(r'(?i)warranty')).text
+
+            clean_data(name, vendor, price, warranty, category, url)
+
+
+def clean_data(name, vendor, price, warranty, category, url):
+    # Remove all the useless data as we want everything to be consistent.
+    name = name.split("Buy", 1)[-1].strip()
+
+    if category == "Processor":
+        if "Box" in name:
+            name = name.split("Box")[0].strip()
+        elif "Tray" in name:
+            name = name.split("Tray")[0].strip()

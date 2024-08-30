@@ -1,7 +1,12 @@
 name: Deploy to AWS
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  PRODUCTS_DB_ARN: ${{ secrets.PRODUCTS_DB_ARN }}
 
 jobs:
   deploy:

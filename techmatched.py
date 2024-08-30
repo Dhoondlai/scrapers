@@ -1,6 +1,9 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+import boto3
+
+vendor = "TechMatched"
 
 
 def run(event, context):
@@ -27,6 +30,7 @@ def run(event, context):
         "SSD": ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd"],
         "Hard Drive": "hard-drive"
     }
+    # will store all the urls associated with their category.
     urls_dict = {}
     for db_category, url_category in categories.items():
         if db_category == "SSD":
@@ -42,7 +46,8 @@ def run(event, context):
             urls_dict[category] = urls
         except Exception as e:
             continue
-        print(urls_dict)
+
+    scrape_data(urls_dict)
 
 
 def get_links(category):
@@ -79,3 +84,15 @@ def get_links(category):
         page = requests.get(url
                             + "/page/" + str(counter)+"/")
     return urls
+
+
+def scrape_data(url_dict):
+    for category, urls in url_dict.items():
+        for url in urls:
+            page = requests.get(url)
+            soup = BeautifulSoup(page.content, "html.parser")
+            name = soup.find("h1", class_="product_title entry-title").text
+            price = soup.find(
+                "p", class_="woocommerce-Price-amount amount").text
+            # warranty field starts with "Warranty:"
+            warranty = soup.find("p", text=re.compile(r'(?i)warranty')).text

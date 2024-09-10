@@ -112,16 +112,21 @@ def scrape_data(url_dict):
             price = soup.find(
                 "p", class_="price").text
             # warranty field starts with "Warranty:"
-            warranty = soup.find("p", text=re.compile(r'(?i)warranty')).text
+            warranty = soup.find("p", text=re.compile(r'Warranty:'))
+            if warranty == None:
+                warranty = soup.find("p", text=re.compile(r'Months'))
+            warranty = warranty.text
+
+            # print vars
+            print("=================Uncleaned data====================\n")
+            print_variables(name=name, vendor=vendor, price=price,
+                            warranty=warranty, category=category, url=url)
             clean_data(name, vendor, price, warranty, category, url)
 
 
 def clean_data(name, vendor, price, warranty, category, url):
     # Remove all the useless data as we want everything to be consistent.
-
-    # names
     name = name.split("Buy", 1)[-1].strip()
-
     if category == "Processor":
         if "Box" in name:
             name = name.split("Box")[0].strip()
@@ -130,5 +135,28 @@ def clean_data(name, vendor, price, warranty, category, url):
 
     # prices
     price = price.split('\u20a8', 1)[-1].strip()
-    print(price)
-    print(name)
+    price = int(price.split('.')[0].replace(',', ''))
+    print("=================Cleaned data====================\n")
+    print_variables(name=name, vendor=vendor, price=price,
+                    warranty=warranty, category=category, url=url)
+
+
+def insert_to_dynamodb(name, vendor, price, warranty, category, url):
+    table = dynamodb.Table('Products')
+    table.put_item(
+        Item={
+            'Name': name,
+            'Vendor': vendor,
+            'Price': price,
+            'Warranty': warranty,
+            'Category': category,
+            'URL': url
+        }
+    )
+
+
+def print_variables(**kwargs):
+    print("\n\n")
+    for key, value in kwargs.items():
+        print(f"{key}: {value}")
+    print("\n\n")

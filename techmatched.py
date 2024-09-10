@@ -4,6 +4,7 @@ import re
 import boto3
 import os
 import sys
+import time
 
 vendor = "TechMatched"
 
@@ -139,18 +140,23 @@ def clean_data(name, vendor, price, warranty, category, url):
     print("=================Cleaned data====================\n")
     print_variables(name=name, vendor=vendor, price=price,
                     warranty=warranty, category=category, url=url)
+    insert_to_dynamodb(name, vendor, str(price), warranty, category, url)
 
 
 def insert_to_dynamodb(name, vendor, price, warranty, category, url):
-    table = dynamodb.Table('Products')
+    table = dynamodb.Table('products')
     table.put_item(
         Item={
-            'Name': name,
-            'Vendor': vendor,
-            'Price': price,
-            'Warranty': warranty,
-            'Category': category,
-            'URL': url
+            'name': name,
+            'vendor': vendor,
+            'price_low': int(price),
+            'price_high': int(price),
+            'updated_at': str(int(time.time())),
+            'created_at': str(int(time.time())),
+            'warranty': warranty,
+            'category': category,
+            'available': True,
+            'url': url
         }
     )
 

@@ -8,9 +8,11 @@ else:
     dynamodb = boto3.resource('dynamodb')
 sys.stdout.reconfigure(encoding='utf-8')
 
+DATA = []
+
 
 def run(event, context):
-    # categories mapped as per in the url
+    # categories mapped as per in the link
     # only setting up data with processors now.
     # Will slowly start adding others as data makes more sense.
 
@@ -38,7 +40,7 @@ def run(event, context):
     }
 
     # will store all the urls associated with their category.
-    ###################################################### Comment this section if you want to test with only one url######################################################
+    ###################################################### Comment this section if you want to test with only one link######################################################
     urls_dict = {}
     for db_category, url_category in categories.items():
         try:
@@ -53,23 +55,24 @@ def run(event, context):
             print(e)
             exit(1)
     print(urls_dict)
-    ###################################################### Comment this section if you want to test with only one url######################################################
+    ###################################################### Comment this section if you want to test with only one link######################################################
 
-    ###################################### Uncomment this section if you want to test with only one url######################################################
+    ###################################### Uncomment this section if you want to test with only one link######################################################
     # urls_dict = {'Processor': [
     #     'https://techmatched.pk/product/buy-amd-ryzen-7-7950x-3d-desktop-processor/']}
-    ###################################### Uncomment this section if you want to test with only one url################################################
+    ###################################### Uncomment this section if you want to test with only one link################################################
 
     scrape_data(urls_dict)
+    insert_to_dynamodb(dynamodb, DATA)
 
 
 def get_links(category):
-    url = "https://techmatched.pk/product-category/" + category
+    link = "https://techmatched.pk/product-category/" + category
     if category in ["gaming-mouse", "gaming-keyboards", "xxl-mousepad", "headphones", "pc-controllers", "pc-cables", "webcam"]:
-        url = "https://techmatched.pk/product-category/gaming-peripherals/" + category
+        link = "https://techmatched.pk/product-category/gaming-peripherals/" + category
     elif category in ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd", "hard-drive"]:
-        url = "https://techmatched.pk/product-category/storage/" + category
-    page = requests.get(url)
+        link = "https://techmatched.pk/product-category/storage/" + category
+    page = requests.get(link)
     soup = BeautifulSoup(page.content, "html.parser")
     # get number of pages
     pages = soup.find("ul", class_="page-numbers")
@@ -79,6 +82,7 @@ def get_links(category):
         page_numbers = pages.find_all('li')
         # -1 is for the "next" button
         no_of_pages = len(list(page_numbers)) - 1
+    print("Number of pages : ", no_of_pages)
 
     urls = []
     counter = 1
@@ -93,15 +97,15 @@ def get_links(category):
         counter += 1
         if counter > no_of_pages:
             break
-        page = requests.get(url
+        page = requests.get(link
                             + "/page/" + str(counter)+"/")
     return urls
 
 
 def scrape_data(url_dict):
     for category, urls in url_dict.items():
-        for url in urls:
-            page = requests.get(url)
+        for link in urls:
+            page = requests.get(link)
             soup = BeautifulSoup(page.content, "html.parser")
             name = soup.find("h1", class_="product_title entry-title").text
             price = soup.find(
@@ -115,11 +119,11 @@ def scrape_data(url_dict):
             # print vars
             print("=================Uncleaned data====================\n")
             print_variables(name=name, vendor=vendor, price=price,
-                            warranty=warranty, category=category, url=url)
-            clean_data(name, vendor, price, warranty, category, url)
+                            warranty=warranty, category=category, link=link)
+            clean_data(name, vendor, price, warranty, category, link)
 
 
-def clean_data(name, vendor, price, warranty, category, url):
+def clean_data(name, vendor, price, warranty, category, link):
     # Remove all the useless data as we want everything to be consistent.
     name = name.split("Buy", 1)[-1].strip()
     if category == "Processor":
@@ -131,8 +135,19 @@ def clean_data(name, vendor, price, warranty, category, url):
     # prices
     price = price.split('\u20a8', 1)[-1].strip()
     price = int(price.split('.')[0].replace(',', ''))
+
+    # Cleaned data stored as a dictionary
+    cleaned_product = {
+        'name': name,
+        'vendor': vendor,
+        'price_low': str(price),
+        'price_high': str(price),
+        'warranty': warranty,
+        'category': category,
+        'link': link
+    }
+
     print("=================Cleaned data====================\n")
-    print_variables(name=name, vendor=vendor, price=price,
-                    warranty=warranty, category=category, url=url)
-    insert_to_dynamodb(dynamodb, name, vendor, str(
-        price), warranty, category, url)
+    print_variables(**cleaned_product)
+
+    DATA.append(cleaned_product)

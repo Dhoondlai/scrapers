@@ -56,6 +56,7 @@ def run(event, context):
             print(e)
             exit(1)
     print(urls_dict)
+    print('Total links:', sum(len(v) for v in urls_dict.values()))
     ###################################################### Comment this section if you want to test with only one link######################################################
 
     ###################################### Uncomment this section if you want to test with only one link######################################################
@@ -64,7 +65,8 @@ def run(event, context):
     ###################################### Uncomment this section if you want to test with only one link################################################
 
     scrape_data(urls_dict)
-    insert_into_db(client, DATA)
+    print("Total products scraped: ", len(DATA))
+    insert_into_db(client, DATA, vendor)
 
 
 def get_links(category):
@@ -141,11 +143,12 @@ def clean_data(name, vendor, price, warranty, category, link):
     cleaned_product = {
         'name': name,
         'vendor': vendor,
-        'price_low': str(price),
+        'price_low': price,
         'price_high': str(price),
         'warranty': warranty,
         'category': category,
-        'link': link
+        'available': True,
+        'link': link,
     }
 
     print("=================Cleaned data====================\n")

@@ -1,11 +1,12 @@
-from imports import *
+from utils.imports import *
 
 vendor = "TechMatched"
 
 if os.environ.get("IS_LOCAL"):
-    dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+    client = MongoClient("localhost", 27017)
 else:
-    dynamodb = boto3.resource('dynamodb')
+    # change this to the actual endpoint
+    client = MongoClient("localhost", 27017)
 sys.stdout.reconfigure(encoding='utf-8')
 
 DATA = []
@@ -63,7 +64,7 @@ def run(event, context):
     ###################################### Uncomment this section if you want to test with only one link################################################
 
     scrape_data(urls_dict)
-    insert_to_dynamodb(dynamodb, DATA)
+    insert_into_db(client, DATA)
 
 
 def get_links(category):

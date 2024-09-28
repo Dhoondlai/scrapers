@@ -9,22 +9,10 @@ provider:
   name: aws
   runtime: python3.8
   timeout: 900
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource:
-        - ${self:provider.environment.PRODUCTS_DB_ARN, "arn:aws:dynamodb:us-east-1:123456789012:table/Products"}
 
 functions:
   techmatched:
-    handler: techmatched.run
+    handler: scrapers/techmatched.run
     name: Techmatched scraper
     events:
       - schedule: rate(1 day)

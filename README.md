@@ -10,6 +10,21 @@ Detailed information about cron expressions in available in official [AWS docs](
 
 ## Usage
 
+## Local env setup
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+./setup-env.sh
+```
+
+## Access Local MongoDB
+
+```bash
+localhost:3300
+```
+
 ### Deployment
 
 This example is made to work with the Serverless Framework dashboard, which includes advanced features such as CI/CD, monitoring, metrics, etc.

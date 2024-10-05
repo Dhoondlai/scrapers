@@ -16,5 +16,10 @@ functions:
     name: Techmatched scraper
     events:
       - schedule: rate(1 day)
+  junaidtech:
+    handler: scrapers/junaidtech.run
+    name: Junaidtech scraper
+    events:
+      - schedule: rate(1 day)
 plugins:
   - serverless-python-requirements

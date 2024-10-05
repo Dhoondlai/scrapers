@@ -6,3 +6,5 @@
 # add mongodb compass here
 
 cd scripts && docker-compose up -d
+echo "Opening MongoDB Compass..."
+start "" "C:\Users\Khanh\AppData\Local\MongoDBCompass\MongoDBCompass.exe"

@@ -19,7 +19,7 @@ jobs:
           node-version: 20.15.0
       - run: npm ci
       - name: serverless deploy
-        uses: serverless/github-action@v4
+        uses: serverless/github-action@v3.2
         with:
           args: -c "serverless plugin install --name serverless-python-requirements && serverless deploy"
         env:

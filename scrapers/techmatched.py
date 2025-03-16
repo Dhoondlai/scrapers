@@ -5,7 +5,7 @@ vendor = "TechMatched"
 
 
 # IS_LOCAL is a serverless framework environment variable
-if os.environ.get("IS_LOCALa"):
+if os.environ.get("IS_LOCAL"):
     print("Using local mongo.")
     client = MongoClient("localhost", 27017)
 else:

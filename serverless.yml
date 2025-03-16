@@ -7,19 +7,19 @@ service: scrapers
 
 provider:
   name: aws
-  runtime: python3.8
+  runtime: python3.12
   timeout: 900
 
 functions:
   techmatched:
     handler: scrapers/techmatched.run
-    name: Techmatched scraper
+    name: techmatched
     events:
       - schedule: rate(1 day)
-  junaidtech:
-    handler: scrapers/junaidtech.run
-    name: Junaidtech scraper
-    events:
-      - schedule: rate(1 day)
+  # junaidtech:
+  #   handler: scrapers/junaidtech.run
+  #   name: junaidtech
+  #   events:
+  #     - schedule: rate(1 day)
 plugins:
   - serverless-python-requirements

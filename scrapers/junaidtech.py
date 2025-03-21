@@ -1,14 +1,21 @@
 from utils.imports import *
+import boto3
 
 vendor = "JunaidTech"
 
 if os.environ.get("IS_LOCAL"):
+    print("Using local mongo.")
     client = MongoClient("localhost", 27017)
 else:
-    # change this to the actual endpoint
-    client = MongoClient("localhost", 27017)
-sys.stdout.reconfigure(encoding='utf-8')
 
+    # fetch from parameter store
+    ssm = boto3.client('ssm', region_name='us-east-1')
+    response = ssm.get_parameter(Name='mongo-uri', WithDecryption=True)
+    uri = response['Parameter']['Value']
+    client = MongoClient(uri)
+
+
+sys.stdout.reconfigure(encoding='utf-8')
 DATA = []
 
 

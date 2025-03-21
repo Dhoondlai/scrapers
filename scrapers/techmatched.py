@@ -3,8 +3,6 @@ import boto3
 
 vendor = "TechMatched"
 
-
-# IS_LOCAL is a serverless framework environment variable
 if os.environ.get("IS_LOCAL"):
     print("Using local mongo.")
     client = MongoClient("localhost", 27017)
@@ -50,8 +48,6 @@ def run(event, context):
         # "Hard Drive": "hard-drive"
     }
 
-    # will store all the urls associated with their category.
-    ###################################################### Comment this section if you want to test with only one link######################################################
     urls_dict = {}
     for db_category, url_category in categories.items():
         try:
@@ -67,13 +63,6 @@ def run(event, context):
             exit(1)
     print(urls_dict)
     print('Total links:', sum(len(v) for v in urls_dict.values()))
-    ###################################################### Comment this section if you want to test with only one link######################################################
-
-    ###################################### Uncomment this section if you want to test with only one link######################################################
-    # urls_dict = {'Processor': [
-    #     'https://techmatched.pk/product/buy-amd-ryzen-7-7950x-3d-desktop-processor/']}
-    ###################################### Uncomment this section if you want to test with only one link################################################
-
     scrape_data(urls_dict)
     print("Total products scraped: ", len(DATA))
     insert_into_db(client, DATA, vendor)
@@ -85,6 +74,7 @@ def get_links(category):
         link = "https://techmatched.pk/product-category/gaming-peripherals/" + category
     elif category in ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd", "hard-drive"]:
         link = "https://techmatched.pk/product-category/storage/" + category
+    print("Scraping link: ", link)
     page = requests.get(link)
     soup = BeautifulSoup(page.content, "html.parser")
     # get number of pages

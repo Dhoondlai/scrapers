@@ -1,79 +1,91 @@
-# scrapers
+# Dhoondlai Scrapers
 
-Scrapers for dhoondlai. Includes lambda functions.
+## Getting Started
 
-# Serverless Framework Python Scheduled Cron on AWS
+### Prerequisites
 
-This template demonstrates how to develop and deploy a simple cron-like service running on AWS Lambda using the Serverless Framework.
+- Python 3.12
+- Required Python packages
 
-Detailed information about cron expressions in available in official [AWS docs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#CronExpressions).
+  (install with `pip install -r requirements.txt`):
 
-## Usage
+## Developing Scrapers
 
-## Local env setup
+### Scraper Structure
+
+Each scraper should be a Python module with a `run(event, context)` function that serves as the entry point. This structure makes the scrapers compatible with both AWS Lambda deployment and local execution.
+
+Example scraper structure:
+
+```python
+# Sample scraper: example_scraper.py
+
+def run(event, context):
+    """
+    Main entry point for the scraper.
+
+    Args:
+        event (dict): Event data (empty when running locally)
+        context (object): Runtime information (empty when running locally)
+
+    Returns:
+        dict: Result of the scraper execution
+    """
+    print("Scraping example site...")
+
+    # Your scraping logic here
+    # ...
+
+    return {
+        "status": "success",
+        "items_scraped": 10
+    }
+```
+
+### Best Practices
+
+1. Handle exceptions properly
+2. Include logging for important steps
+3. Check for the `IS_LOCAL` environment variable if your scraper needs to behave differently when run locally
+4. Respect websites' robots.txt and implement rate limiting
+
+## Running Scrapers Locally
+
+The `run_scraper.py` script allows you to test scrapers locally before deployment.
+
+First of all, make the script executeable:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-./setup-env.sh
+chmod +x run_scraper.py
 ```
 
-## Access Local MongoDB
+Note: You need to be in the `scrapers` directory, with appropiate venv to run the script.
+
+### Listing Available Scrapers
+
+To see all available scrapers:
 
 ```bash
-localhost:3300
+./run_scraper.py --list
 ```
 
-### Deployment
+### Running a Specific Scraper
 
-This example is made to work with the Serverless Framework dashboard, which includes advanced features such as CI/CD, monitoring, metrics, etc.
+To run a specific scraper:
 
-In order to deploy with dashboard, you need to first login with:
-
-```
-serverless login
+```bash
+./run_scraper.py <scraper_name>
 ```
 
-and then perform deployment with:
+For example:
 
-```
-serverless deploy
-```
-
-After running deploy, you should see output similar to:
-
-```
-Deploying "aws-python-scheduled-cron" to stage "dev" (us-east-1)
-
-✔ Service deployed to stack aws-python-scheduled-cron-dev (146s)
-
-functions:
-  rateHandler: aws-python-scheduled-cron-dev-rateHandler (2.2 kB)
+```bash
+./run_scraper.py junaidtech
 ```
 
-There is no additional step required. Your defined schedules becomes active right away after deployment.
+This will:
 
-### Local invocation
-
-In order to test out your functions locally, you can invoke them with the following command:
-
-```
-serverless invoke local --function rateHandler
-```
-
-After invocation, you should see output similar to:
-
-```
-INFO:handler:Your cron function ran at 15:02:43.203145
-```
-
-### Bundling dependencies
-
-In case you would like to include 3rd party dependencies, you will need to use a plugin called `serverless-python-requirements`. You can set it up by running the following command:
-
-```
-serverless plugin install -n serverless-python-requirements
-```
-
-Running the above will automatically add `serverless-python-requirements` to `plugins` section in your `serverless.yml` file and add it as a `devDependency` to `package.json` file. The `package.json` file will be automatically created if it doesn't exist beforehand. Now you will be able to add your dependencies to `requirements.txt` file (`Pipfile` and `pyproject.toml` is also supported but requires additional configuration) and they will be automatically injected to Lambda package during build process. For more details about the plugin's configuration, please refer to [official documentation](https://github.com/UnitedIncome/serverless-python-requirements).
+1. Set the `IS_LOCAL` environment variable to `True`
+2. Import the specified scraper module
+3. Call the `run()` function with empty event and context objects
+4. Display the results in the console

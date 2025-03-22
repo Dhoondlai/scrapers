@@ -26,7 +26,7 @@ jobs:
         run: |
           cd scrapers
           mkdir -p zips
-          echo finding all Python files that are scrapers (exclude run_scraper.py and __init__.py)
+          echo finding all Python files that are scrapers
           for scraper_file in $(find . -name "*.py" -not -name "run_scraper.py" -not -name "__init__.py" -not -path "*/utils/*" -type f -maxdepth 1); do
             echo extracting scraper name without extension
             scraper_name=$(basename "$scraper_file" .py)

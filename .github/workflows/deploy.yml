@@ -1,24 +1,57 @@
-# name: Deploy to AWS
+name: Deploy Lambdas
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-# on:
-#   push:
-#     branches:
-#       - main
+jobs:
+  Lambda:
+    name: Deploy Lambda
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v3
-#       - name: Setup NodeJS
-#         uses: actions/setup-node@v3
-#         with:
-#           node-version: 20.15.0
-#       - run: npm ci
-#       - name: serverless deploy
-#         uses: serverless/github-action@v3.2
-#         with:
-#           args: -c "serverless plugin install --name serverless-python-requirements && serverless deploy"
-#         env:
-#           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-#           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Zip respective lambda functions
+        run: |
+          cd scrapers
+          mkdir -p zips
+          echo finding all Python files that are scrapers (exclude run_scraper.py and __init__.py)
+          for scraper_file in $(find . -name "*.py" -not -name "run_scraper.py" -not -name "__init__.py" -not -path "*/utils/*" -type f -maxdepth 1); do
+            echo extracting scraper name without extension
+            scraper_name=$(basename "$scraper_file" .py)
+            echo "Zipping $scraper_name scraper..."
+            
+            mkdir -p "temp_$scraper_name"
+            cp "$scraper_file" "temp_$scraper_name/"
+            cp -r utils "temp_$scraper_name/"
+            
+
+            cd "temp_$scraper_name"
+            zip -r "../zips/$scraper_name.zip" ./*
+            cd ..
+            rm -rf "temp_$scraper_name"
+          done
+          cd ..
+
+      - name: Deploy Lambda Functions
+        run: |
+          cd scrapers/zips
+          for zip_file in *.zip; do
+            # Extract scraper name without extension
+            scraper_name=$(basename "$zip_file" .zip)
+            lambda_function="${scraper_name}-scraper"
+            
+            echo "Deploying $scraper_name to Lambda function $lambda_function..."
+            aws lambda update-function-code --function-name "$lambda_function" --zip-file fileb://"$zip_file"
+          done

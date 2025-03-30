@@ -7,7 +7,7 @@ import importlib
 
 def run_scraper(scraper_name):
     # Set environment variable to indicate local execution
-    os.environ["IS_LOCAL"] = "True"
+    os.environ["IS_LOCALA"] = "True"
 
     # Ensure the current directory is in the Python path
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             os.path.abspath(__file__)), "")
         available_scrapers = [
             f[:-3] for f in os.listdir(scrapers_dir)
-            if f.endswith('.py') and not f.startswith('__')
+            if f.endswith('.py') and not f.startswith('__') and f != 'run_scraper.py'
         ]
         print("Available scrapers:")
         for scraper in available_scrapers:

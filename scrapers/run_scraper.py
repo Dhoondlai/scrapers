@@ -3,11 +3,13 @@ import os
 import sys
 import argparse
 import importlib
+import time
+from datetime import datetime
 
 
 def run_scraper(scraper_name):
     # Set environment variable to indicate local execution
-    os.environ["IS_LOCALA"] = "True"
+    os.environ["IS_LOCAL"] = "True"
 
     # Ensure the current directory is in the Python path
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -23,6 +25,9 @@ def run_scraper(scraper_name):
         print("Scraper module: ", scraper_module)
 
         print(f"Running {scraper_name} scraper...")
+        start_time = time.time()
+        start_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"Start time: {start_datetime}")
 
         # Create mock event and context objects
         mock_event = {}
@@ -31,7 +36,16 @@ def run_scraper(scraper_name):
         # Run the lambda function
         scraper_module.run(mock_event, mock_context)
 
+        end_time = time.time()
+        end_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        elapsed_seconds = end_time - start_time
+        minutes = int(elapsed_seconds // 60)
+        seconds = int(elapsed_seconds % 60)
+
         print(f"\n{scraper_name} scraper completed successfully.")
+        print(f"Start time: {start_datetime}")
+        print(f"End time: {end_datetime}")
+        print(f"Total execution time: {minutes} minutes and {seconds} seconds")
 
     except ImportError:
         print(

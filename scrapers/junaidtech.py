@@ -40,9 +40,9 @@ def run(event, context):
     print(urls_dict)
     print('Total links:', sum(len(v) for v in urls_dict.values()))
 
-    # scrape_data(urls_dict)
-    # print("Total products scraped: ", len(DATA))
-    # insert_into_db(client, DATA, vendor)
+    scrape_data(urls_dict)
+    print("Total products scraped: ", len(DATA))
+    insert_into_db(client, DATA, vendor)
 
 
 def get_links(category):
@@ -71,38 +71,49 @@ def get_links(category):
 def scrape_data(url_dict):
     for category, urls in url_dict.items():
         for link in urls:
+            link = "https://www.junaidtech.pk" + link
+            print("Fetching data from: ", link)
+            # Fetch the page content
             page = requests.get(link)
             soup = BeautifulSoup(page.content, "html.parser")
-            name = soup.find("h1", class_="product_title entry-title").text
+
+            name = soup.find("h1", class_="product-title").text
+
             price = soup.find(
-                "p", class_="price").text
-            # warranty field starts with "Warranty:"
-            warranty = soup.find("p", text=re.compile(r'Warranty:'))
+                "span", class_="price-sales").text
+
+            warranty = soup.find("span", id="spnWarranty")
             if warranty == None:
-                warranty = soup.find("p", text=re.compile(r'Months'))
-            warranty = warranty.text
+                warranty = "Not Available"
+            else:
+                warranty = warranty.text
+
+            in_stock = soup.find("span", id="spnStockStatus").text
+            if in_stock == "In Stock":
+                in_stock = True
+            else:
+                in_stock = False
 
             # print vars
-            print("=================Uncleaned data====================\n")
+            print("=================Uncleaned data====================")
             print_variables(name=name, vendor=vendor, price=price,
-                            warranty=warranty, category=category, link=link)
-            clean_data(name, vendor, price, warranty, category, link)
+                            warranty=warranty, category=category, link=link, in_stock=in_stock)
+
+            clean_data(name, vendor, price, warranty, category, link, in_stock)
 
 
-def clean_data(name, vendor, price, warranty, category, link):
-    # Remove all the useless data as we want everything to be consistent.
-    name = name.split("Buy", 1)[-1].strip()
-    if category == "Processor":
-        if "Box" in name:
-            name = name.split("Box")[0].strip()
-        elif "Tray" in name:
-            name = name.split("Tray")[0].strip()
+def clean_data(name, vendor, price, warranty, category, link, in_stock):
+
+    available = True
+    if not in_stock:
+        available = False
+
+    # remove any "-" to handle consistency in intel processors
+    name = name.replace("-", " ")
 
     # prices
-    price = price.split('\u20a8', 1)[-1].strip()
-    price = int(price.split('.')[0].replace(',', ''))
+    price = int(price.split('Rs.', 1)[-1].strip().replace(',', ''))
 
-    # Cleaned data stored as a dictionary
     cleaned_product = {
         'name': name,
         'vendor': vendor,
@@ -110,11 +121,11 @@ def clean_data(name, vendor, price, warranty, category, link):
         'price_high': str(price),
         'warranty': warranty,
         'category': category,
-        'available': True,
+        'available': available,
         'link': link,
     }
 
-    print("=================Cleaned data====================\n")
+    print("=================Cleaned data====================")
     print_variables(**cleaned_product)
 
     DATA.append(cleaned_product)

@@ -22,7 +22,7 @@ def insert_into_db(client, DATA, vendor_name):
         # Check if the product exists based on name and vendor
         try:
             existing_product = products.find_one(
-                {"name": data['name'], "vendor": data['vendor']})
+                {"link": data['link'], "vendor": data['vendor']})
 
             if existing_product:
                 # Update the product but keep the created_at timestamp unchanged
@@ -41,6 +41,7 @@ def insert_into_db(client, DATA, vendor_name):
                 if result.modified_count > 0:
                     print(
                         f"Updated existing product: {data['name']} (Vendor: {vendor_name})")
+                    print(f"Product URL: {data['link']}")
                 else:
                     print(
                         f"No changes made to existing product: {data['name']} (Vendor: {vendor_name})")

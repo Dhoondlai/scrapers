@@ -27,12 +27,15 @@ def run(event, context):
     print('Total links:', len(urls))
 
     scrape_data(urls)
+    insert_into_db(client, DATA, vendor)
 
 
 def get_links(category):
     link = "https://rbtechngames.com/product-category/computers/"+category
     print("Fetching links from: ", link)
-    page = requests.get(link)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}
+    page = requests.get(link, headers=headers)
 
     urls = []
     counter = 1

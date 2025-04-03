@@ -4,6 +4,9 @@ import json
 
 vendor = "TechMatched"
 
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}
+
 if os.environ.get("IS_LOCAL"):
     print("Using local mongo.")
     client = MongoClient("localhost", 27017)
@@ -22,69 +25,28 @@ DATA = []
 
 
 def run(event, context):
-    # categories mapped as per in the link
-    # only setting up data with processors now.
-    # Will slowly start adding others as data makes more sense.
 
-    categories = {
-        "Processor": "processors",
-        # "Motherboard": "motherboards",
-        # "Thermal Paste": "thermal-paste",
-        # "CPU Cooler": "cpu-coolers",
-        # "RAM": "rams",
-        # "Casing": "computer-case",
-        # "Fan": "fans-kits",
-        # "Power Supply": "buy-power-supply-in-pakistan",
-        # "Graphics Card": "graphics-card-in-pakistan",
-        # "Gaming Monitor": "gaming-monitors",
-        # "Gaming Chair": "gaming-chairs",
-        # "Mouse": "gaming-mouse",
-        # "Keyboard": "gaming-keyboards",
-        # "Mousepad": "xxl-mousepad",
-        # "Headphone": "headphones",
-        # "Controller": "pc-controllers",
-        # "Cable": "pc-cables",
-        # "Webcam": "webcam",
-        # "SSD": ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd"],
-        # "Hard Drive": "hard-drive"
-    }
+    urls = get_links("processors/")
 
-    urls_dict = {}
-    for db_category, url_category in categories.items():
-        try:
-            if db_category == "SSD":
-                for category in url_category:
-                    urls = get_links(category)
-                    urls_dict[category] = urls
-            else:
-                urls = get_links(url_category)
-                urls_dict[db_category] = urls
-        except Exception as e:
-            print(e)
-            exit(1)
-    print(urls_dict)
-    print('Total links:', sum(len(v) for v in urls_dict.values()))
-    scrape_data(urls_dict)
-    print("Total products scraped: ", len(DATA))
+    print("URLs fetched: ", urls)
+    print('Total links:', len(urls))
+
+    scrape_data(urls)
     insert_into_db(client, DATA, vendor)
 
 
 def get_links(category):
     link = "https://techmatched.pk/product-category/" + category
-    if category in ["gaming-mouse", "gaming-keyboards", "xxl-mousepad", "headphones", "pc-controllers", "pc-cables", "webcam"]:
-        link = "https://techmatched.pk/product-category/gaming-peripherals/" + category
-    elif category in ["find-ssd-prices-in-pakistan", "nvme-m-2-ssd", "hard-drive"]:
-        link = "https://techmatched.pk/product-category/storage/" + category
     print("Scraping link: ", link)
-    page = requests.get(link)
+
+    page = requests.get(link, headers=headers)
     soup = BeautifulSoup(page.content, "html.parser")
-    # get number of pages
+
     pages = soup.find("ul", class_="page-numbers")
     if pages is None:
         no_of_pages = 1
     else:
         page_numbers = pages.find_all('li')
-        # -1 is for the "next" button
         no_of_pages = len(list(page_numbers)) - 1
     print("Number of pages : ", no_of_pages)
 
@@ -106,25 +68,34 @@ def get_links(category):
     return urls
 
 
-def scrape_data(url_dict):
-    for category, urls in url_dict.items():
-        for link in urls:
-            page = requests.get(link)
-            soup = BeautifulSoup(page.content, "html.parser")
-            name = soup.find("h1", class_="product_title entry-title").text
-            price = soup.find(
-                "p", class_="price").text
-            # warranty field starts with "Warranty:"
-            warranty = soup.find("p", text=re.compile(r'Warranty:'))
+def scrape_data(urls):
+    category = "Processor"
+    for link in urls:
+
+        print("Fetching data from: ", link)
+        page = requests.get(link, headers=headers)
+        soup = BeautifulSoup(page.content, "html.parser")
+
+        name = soup.find("h1", class_="product_title entry-title").text
+
+        price = soup.find(
+            "p", class_="price").text
+
+        warranty = soup.find("p", text=re.compile(r'Warranty:'))
+        if warranty == None:
+            warranty = soup.find("p", text=re.compile(r'Months'))
             if warranty == None:
-                warranty = soup.find("p", text=re.compile(r'Months'))
+                warranty = "Not Available"
+            else:
+                warranty = warranty.text
+        else:
             warranty = warranty.text
 
-            # print vars
-            print("=================Uncleaned data====================\n")
-            print_variables(name=name, vendor=vendor, price=price,
-                            warranty=warranty, category=category, link=link)
-            clean_data(name, vendor, price, warranty, category, link)
+        # print vars
+        print("=================Uncleaned data====================\n")
+        print_variables(name=name, vendor=vendor, price=price,
+                        warranty=warranty, category=category, link=link)
+        clean_data(name, vendor, price, warranty, category, link)
 
 
 def clean_data(name, vendor, price, warranty, category, link):

@@ -1,7 +1,7 @@
 from utils.imports import *
 import boto3
 
-vendor = "JunaidTech"
+vendor = "JunaidTech.pk"
 
 if os.environ.get("IS_LOCAL"):
     print("Using local mongo.")

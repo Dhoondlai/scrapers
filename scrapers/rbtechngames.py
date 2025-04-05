@@ -1,7 +1,7 @@
 from utils.imports import *
 import boto3
 
-vendor = "RBTechNGames"
+vendor = "RBTechNGames.com"
 
 if os.environ.get("IS_LOCAL"):
     print("Using local mongo.")

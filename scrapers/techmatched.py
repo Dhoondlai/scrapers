@@ -2,7 +2,7 @@ from utils.imports import *
 import boto3
 import json
 
-vendor = "TechMatched"
+vendor = "TechMatched.com"
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}

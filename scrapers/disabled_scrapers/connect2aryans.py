@@ -38,17 +38,19 @@ def get_links(category):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}
 
-    get_each(link1)
-    get_each(link2)
-
-    def get_each(link):
+    def get_each_link(link):
         print("Fetching links from: ", link)
         page = requests.get(link, headers=headers)
         soup = BeautifulSoup(page.content, "html.parser")
+        # print(soup)
         links = soup.find_all(
-            "a", class_="block-product-list__link")
+            "a")
+        print(links)
         for link in links:
             urls.append(link.get("href"))
+
+    get_each_link(link1)
+    # get_each_link(link2)
 
     return urls
 
@@ -79,7 +81,6 @@ def scrape_data(urls):
 
         in_stock = True
 
-        # print vars
         print("=================Uncleaned data====================")
         print_variables(name=name, vendor=vendor, price=price,
                         warranty=warranty, category=category, link=link, in_stock=in_stock)

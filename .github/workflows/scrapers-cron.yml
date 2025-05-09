@@ -1,4 +1,4 @@
-name: Execute Scrapers and DB Updator
+name: Invoke Scrapers and DB Updator Lambda
 on:
   schedule:
     # 4pm UTC every day
@@ -31,7 +31,7 @@ jobs:
 
           for scraper in "${scrapers[@]}"; do
             echo "Invoking $scraper..."
-            aws lambda invoke --function-name "$scraper" --invocation-type Event response.json
+            aws lambda invoke --function-name "$scraper" response.json
             echo "Response from $scraper:"
             cat response.json
           done

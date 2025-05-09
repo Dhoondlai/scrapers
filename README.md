@@ -89,3 +89,9 @@ This will:
 2. Import the specified scraper module
 3. Call the `run()` function with empty event and context objects
 4. Display the results in the console
+
+To run all scrapers, you can use the `--all` flag:
+
+```bash
+./run_scraper.py --all
+```

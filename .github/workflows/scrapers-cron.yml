@@ -1,4 +1,4 @@
-name: Deploy Lambdas
+name: Execute Scrapers and DB Updator
 on:
   schedule:
     # 4pm UTC every day

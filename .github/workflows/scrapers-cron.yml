@@ -1,0 +1,46 @@
+name: Deploy Lambdas
+on:
+  schedule:
+    # 4pm UTC every day
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+jobs:
+  invoke-scrapers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Invoke Scrapers (individually)
+        run: |
+          echo "Invoking scrapers..."
+
+          scrapers=(
+            "buyerspk-scraper"
+            "gamerz-scraper"
+            "junaidtech-scraper"
+            "rbtechngames-scraper"
+            "techmatched-scraper"
+            "walistech-scraper"
+          )
+
+          for scraper in "${scrapers[@]}"; do
+            echo "Invoking $scraper..."
+            aws lambda invoke --function-name "$scraper" --invocation-type Event response.json
+            echo "Response from $scraper:"
+            cat response.json
+          done
+          echo "All scrapers invoked successfully."
+
+      - name: Invoke DB Updator
+        run: |
+          echo "Invoking DB Updator..."
+          aws lambda invoke --function-name "db-updator" response.json
+          echo "Response from DB Updator:"
+          cat response.json
+          echo "DB Updator invoked successfully."

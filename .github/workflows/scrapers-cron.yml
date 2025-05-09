@@ -40,7 +40,7 @@ jobs:
       - name: Invoke DB Updator
         run: |
           echo "Invoking DB Updator..."
-          aws lambda invoke --function-name "db-updator" response.json
+          aws lambda invoke --function-name "db-updator" --payload '{"category" : "Processor"}' response.json
           echo "Response from DB Updator:"
           cat response.json
           echo "DB Updator invoked successfully."

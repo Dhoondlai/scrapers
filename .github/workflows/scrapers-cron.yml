@@ -1,4 +1,4 @@
-name: Invoke Scrapers and DB Updator Lambda
+name: Invoke Scrapers
 on:
   schedule:
     # 4pm UTC every day
@@ -31,16 +31,8 @@ jobs:
 
           for scraper in "${scrapers[@]}"; do
             echo "Invoking $scraper..."
-            aws lambda invoke --function-name "$scraper" response.json
+            aws lambda invoke --function-name "$scraper" --invocation-type Event response.json
             echo "Response from $scraper:"
             cat response.json
           done
           echo "All scrapers invoked successfully."
-
-      - name: Invoke DB Updator
-        run: |
-          echo "Invoking DB Updator..."
-          aws lambda invoke --function-name "db-updator" --cli-binary-format raw-in-base64-out --payload '{"category" : "Processor"}' response.json
-          echo "Response from DB Updator:"
-          cat response.json
-          echo "DB Updator invoked successfully."

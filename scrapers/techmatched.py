@@ -115,8 +115,7 @@ def clean_data(name, vendor, price, warranty, category, link):
     cleaned_product = {
         'name': name,
         'vendor': vendor,
-        'price_low': price,
-        'price_high': str(price),
+        'current_price': price,
         'warranty': warranty,
         'category': category,
         'available': True,

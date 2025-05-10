@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 def insert_into_db(client, DATA, vendor_name):
@@ -18,19 +19,37 @@ def insert_into_db(client, DATA, vendor_name):
     count = 0
     for data in DATA:
         count += 1
-        print(f"Inserting product {count}/{len(DATA)}")
         # Check if the product exists based on name and vendor
         try:
             existing_product = products.find_one(
                 {"link": data['link'], "vendor": data['vendor']})
 
             if existing_product:
+
+                print(f"Updating product {count}/{len(DATA)}")
                 # Update the product but keep the created_at timestamp unchanged
+
+                if data['current_price'] > existing_product['price_high']:
+                    data['price_low'] = existing_product['price_high']
+                    data['price_high'] = data['current_price']
+
+                elif data['current_price'] < existing_product['price_low']:
+                    data['price_low'] = data['current_price']
+                    data['price_high'] = existing_product['price_low']
+
+                else:
+                    data['price_low'] = existing_product['price_low']
+                    data['price_high'] = existing_product['price_high']
+
+                print(datetime.now(tz=ZoneInfo("Asia/Karachi")))
+
                 result = products.update_one(
                     {"_id": existing_product['_id']},
                     {"$set": {
                         "price_low": data.get('price_low', existing_product['price_low']),
                         "price_high": data.get('price_high', existing_product['price_high']),
+                        "current_price": data.get('current_price', existing_product['current_price']),
+                        "name": data.get('name', existing_product['name']),
                         "updated_at": datetime.now(),
                         "warranty": data.get('warranty', existing_product.get('warranty')),
                         "category": data.get('category', existing_product.get('category')),
@@ -46,9 +65,12 @@ def insert_into_db(client, DATA, vendor_name):
                     print(
                         f"No changes made to existing product: {data['name']} (Vendor: {vendor_name})")
             else:
+                print(f"Inserting product {count}/{len(DATA)}")
                 # Insert new product if it doesn't exist
-                data['created_at'] = datetime.now()
-                data['updated_at'] = datetime.now()
+                data['created_at'] = datetime.now(tz=ZoneInfo("Asia/Karachi"))
+                data['updated_at'] = datetime.now(tz=ZoneInfo("Asia/Karachi"))
+                data['price_low'] = data['current_price']
+                data['price_high'] = data['current_price']
                 result = products.insert_one(data)
                 print(
                     f"Inserted new product: {data['name']} (Vendor: {vendor_name}) with ID: {result.inserted_id}")

@@ -16,10 +16,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Invoke DB Updator
+      - name: Invoke DB Updator for Processors
         run: |
-          echo "Invoking DB Updator..."
+          echo "Invoking DB Updator for Processors..."
           aws lambda invoke --function-name "db-updator" --cli-binary-format raw-in-base64-out --payload '{"category" : "Processor"}' response.json
+          echo "Response from DB Updator:"
+          cat response.json
+          echo "DB Updator invoked successfully."
+
+      - name: Invoke DB Updator for GPUs
+        run: |
+          echo "Invoking DB Updator for GPUs..."
+          aws lambda invoke --function-name "db-updator" --cli-binary-format raw-in-base64-out --payload '{"category" : "GPU"}' response.json
           echo "Response from DB Updator:"
           cat response.json
           echo "DB Updator invoked successfully."

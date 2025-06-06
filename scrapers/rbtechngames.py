@@ -21,12 +21,27 @@ DATA = []
 
 def run(event, context):
     print("Starting" + vendor + " scraper")
-    urls = get_links("processors/")
 
-    print("URLs fetched: ", urls)
-    print('Total links:', len(urls))
+    categories = {
+        "Processor": "processors/",
+        "GPU": "graphics-card/",
+    }
 
-    scrape_data(urls)
+    urls_dict = {}
+
+    for db_category, url_category in categories.items():
+        try:
+            print("Calling get_links")
+            urls = get_links(url_category)
+            urls_dict[db_category] = urls
+        except Exception as e:
+            print(e)
+            exit(1)
+    print(urls_dict)
+    print('Total links:', sum(len(v) for v in urls_dict.values()))
+
+    scrape_data(urls_dict)
+    print("Total products scraped: ", len(DATA))
     insert_into_db(client, DATA, vendor)
 
 
@@ -56,41 +71,45 @@ def get_links(category):
     return urls
 
 
-def scrape_data(urls):
-    category = "Processor"
-    for link in urls:
-        print("Fetching data from: ", link)
-        # Fetch the page content
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}
+def scrape_data(url_dict):
+    for category, urls in url_dict.items():
+        for link in urls:
+            print("Fetching data from: ", link)
+            # Fetch the page content
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}
 
-        page = requests.get(link, headers=headers)
-        soup = BeautifulSoup(page.content, "html.parser")
+            page = requests.get(link, headers=headers)
+            soup = BeautifulSoup(page.content, "html.parser")
 
-        name = soup.find(
-            "h1", class_="product-title product_title entry-title").text.strip()
+            name = soup.find(
+                "h1", class_="product-title product_title entry-title").text.strip()
 
-        try:
-            price = soup.find(
-                "div", class_="price-wrapper").find("ins").find("bdi").text
-        except:
-            price = soup.find(
-                "div", class_="price-wrapper").find("bdi").text
+            try:
+                price = soup.find(
+                    "div", class_="price-wrapper").find("ins").find("bdi").text
+            except:
+                price = soup.find(
+                    "div", class_="price-wrapper").find("bdi").text
 
-        warranty = "Not Available"
+            warranty = "Not Available"
 
-        in_stock = soup.find("p", class_="stock in-stock").text
-        if "in stock" in in_stock.lower():
-            in_stock = True
-        else:
-            in_stock = False
+            try:
+                in_stock = soup.find("p", class_="stock in-stock").text
+            except:
+                in_stock = soup.find(
+                    "p", class_="stock available-on-backorder").text
+            if "in stock" in in_stock.lower() or "available on backorder" in in_stock.lower():
+                in_stock = True
+            else:
+                in_stock = False
 
-        # print vars
-        print("=================Uncleaned data====================")
-        print_variables(name=name, vendor=vendor, price=price,
-                        warranty=warranty, category=category, link=link, in_stock=in_stock)
+            # print vars
+            print("=================Uncleaned data====================")
+            print_variables(name=name, vendor=vendor, price=price,
+                            warranty=warranty, category=category, link=link, in_stock=in_stock)
 
-        clean_data(name, vendor, price, warranty, category, link, in_stock)
+            clean_data(name, vendor, price, warranty, category, link, in_stock)
 
 
 def clean_data(name, vendor, price, warranty, category, link, in_stock):
@@ -101,6 +120,10 @@ def clean_data(name, vendor, price, warranty, category, link, in_stock):
 
     # remove any "-" to handle consistency in intel processors
     name = name.replace("-", " ")
+
+    if category == "GPU" and "Bracket" in name:
+        print("Skipping GPU Bracket: ", name)
+        return
 
     # prices
     price = int(price.split('\u20a8', 1)[-1].strip().replace(',', ''))

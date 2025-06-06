@@ -26,6 +26,7 @@ def run(event, context):
 
     categories = {
         "Processor": "processors-cpu",
+        "GPU": "graphics-cards-gpu",
     }
 
     urls_dict = {}

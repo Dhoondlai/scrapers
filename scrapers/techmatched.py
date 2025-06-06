@@ -26,13 +26,35 @@ DATA = []
 
 def run(event, context):
 
-    urls = get_links("processors/")
+    categories = {
+        "Processor": "processors/",
+        "GPU": "graphics-card-in-pakistan/",
+    }
 
-    print("URLs fetched: ", urls)
-    print('Total links:', len(urls))
+    urls_dict = {}
 
-    scrape_data(urls)
+    for db_category, url_category in categories.items():
+        try:
+            print("Calling get_links")
+            urls = get_links(url_category)
+            urls_dict[db_category] = urls
+        except Exception as e:
+            print(e)
+            exit(1)
+    print(urls_dict)
+    print('Total links:', sum(len(v) for v in urls_dict.values()))
+
+    scrape_data(urls_dict)
+    print("Total products scraped: ", len(DATA))
     insert_into_db(client, DATA, vendor)
+
+    # urls = get_links("processors/")
+
+    # print("URLs fetched: ", urls)
+    # print('Total links:', len(urls))
+
+    # scrape_data(urls)
+    # insert_into_db(client, DATA, vendor)
 
 
 def get_links(category):
@@ -68,34 +90,37 @@ def get_links(category):
     return urls
 
 
-def scrape_data(urls):
-    category = "Processor"
-    for link in urls:
+def scrape_data(url_dict):
+    for category, urls in url_dict.items():
+        for link in urls:
 
-        print("Fetching data from: ", link)
-        page = requests.get(link, headers=headers)
-        soup = BeautifulSoup(page.content, "html.parser")
+            print("Fetching data from: ", link)
+            page = requests.get(link, headers=headers)
+            soup = BeautifulSoup(page.content, "html.parser")
 
-        name = soup.find("h1", class_="product_title entry-title").text
+            name = soup.find("h1", class_="product_title entry-title").text
 
-        price = soup.find(
-            "p", class_="price").text
+            price = soup.find(
+                "p", class_="price").text
+            if price == "":
+                print("Price not found")
+                continue
 
-        warranty = soup.find("p", text=re.compile(r'Warranty:'))
-        if warranty == None:
-            warranty = soup.find("p", text=re.compile(r'Months'))
+            warranty = soup.find("p", text=re.compile(r'Warranty:'))
             if warranty == None:
-                warranty = "Not Available"
+                warranty = soup.find("p", text=re.compile(r'Months'))
+                if warranty == None:
+                    warranty = "Not Available"
+                else:
+                    warranty = warranty.text
             else:
                 warranty = warranty.text
-        else:
-            warranty = warranty.text
 
-        # print vars
-        print("=================Uncleaned data====================\n")
-        print_variables(name=name, vendor=vendor, price=price,
-                        warranty=warranty, category=category, link=link)
-        clean_data(name, vendor, price, warranty, category, link)
+            # print vars
+            print("=================Uncleaned data====================\n")
+            print_variables(name=name, vendor=vendor, price=price,
+                            warranty=warranty, category=category, link=link)
+            clean_data(name, vendor, price, warranty, category, link)
 
 
 def clean_data(name, vendor, price, warranty, category, link):
